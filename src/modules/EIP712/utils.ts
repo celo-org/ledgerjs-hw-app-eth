@@ -93,6 +93,7 @@ export const EIP712_TYPE_ENCODERS = {
   },
 
   BOOL(value: number | string | boolean | null): Buffer {
+    // @ts-expect-error
     return this.INT(typeof value === "boolean" ? Number(value).toString() : value);
   },
 

@@ -1,7 +1,19 @@
 {
-  "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "outDir": "lib"
+    "allowJs": true, // we might want to change to false
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "isolatedModules": true,
+    "moduleResolution": "node",
+    "pretty": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "sourceMap": true,
+    "strict": true,
+    "target": "ES6",
+    "outDir": "lib",
+    "noImplicitAny": false
   },
   "include": ["src/**/*"]
 }

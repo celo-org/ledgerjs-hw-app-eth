@@ -1319,6 +1319,16 @@
   resolved "https://registry.yarnpkg.com/@ledgerhq/logs/-/logs-6.12.0.tgz#ad903528bf3687a44da435d7b2479d724d374f5d"
   integrity sha512-ExDoj1QV5eC6TEbMdLUMMk9cfvNKhhv5gXol4SmULRVCx/3iyCPhJ74nsb3S0Vb+/f+XujBEj3vQn5+cwS0fNA==
 
+"@ledgerhq/types-cryptoassets@^7.13.0":
+  version "7.13.0"
+  resolved "https://registry.yarnpkg.com/@ledgerhq/types-cryptoassets/-/types-cryptoassets-7.13.0.tgz#cf7701757b6a64407998d78fea991bfddda081a4"
+  integrity sha512-SgH2E6RadmdqwQg6wXsbAMSSavrBJDYF9qqCeeJZlQA3lshUTRSbZHahxg0We/o0WzEn+ZIRZqtmVnhwSo0Aeg==
+
+"@ledgerhq/types-devices@^6.25.0":
+  version "6.25.0"
+  resolved "https://registry.yarnpkg.com/@ledgerhq/types-devices/-/types-devices-6.25.0.tgz#98d52bc25e88a1b217fd1854d14d7bddc970be9c"
+  integrity sha512-3GztnGm5FTNW2B0wZuHELKKqgOnnLcsCHs8ZkU40vdREIHmRwmYe156sUwKz6nRHnneMvEvhAIfitK9BPbKImA==
+
 "@ledgerhq/types-live@^6.48.1", "@ledgerhq/types-live@workspace:^":
   version "6.48.1"
   resolved "https://registry.yarnpkg.com/@ledgerhq/types-live/-/types-live-6.48.1.tgz#d32249a4384b7ae22cccb3cca43e8b96491305b2"
@@ -4705,6 +4715,11 @@ type-fest@^2.0.0, type-fest@^2.5.0:
   version "2.19.0"
   resolved "https://registry.yarnpkg.com/type-fest/-/type-fest-2.19.0.tgz#88068015bb33036a598b952e55e9311a60fd3a9b"
   integrity sha512-RAH822pAdBgcNMAfWnCBU3CFZcfZ/i1eZjwFU/dsLKumyuuP3niueg2UAukXYF0E2AAoc82ZSSf9J0WQBinzHA==
+
+typescript@^5.5.3:
+  version "5.5.3"
+  resolved "https://registry.yarnpkg.com/typescript/-/typescript-5.5.3.tgz#e1b0a3c394190838a0b168e771b0ad56a0af0faa"
+  integrity sha512-/hreyEujaB0w76zKo6717l3L0o/qEUtRgdvUBvlkhoWeOVMjMuHNHk0BRBzikzuGDqNmPQbg5ifMEqsHLiIUcQ==
 
 unc-path-regex@^0.1.2:
   version "0.1.2"
