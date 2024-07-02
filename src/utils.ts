@@ -44,7 +44,7 @@ export function maybeHexBuffer(str: string | null | undefined): Buffer | null | 
 }
 
 export const decodeTxInfo = (rawTx: Buffer) => {
-  const VALID_TYPES = [1, 2];
+  const VALID_TYPES = [1, 2, 123];
   const txType = VALID_TYPES.includes(rawTx[0]) ? rawTx[0] : null;
   const rlpData = txType === null ? rawTx : rawTx.slice(1);
   const rlpTx = decode(rlpData).map(hex => Buffer.from(hex.slice(2), "hex"));
@@ -66,13 +66,21 @@ export const decodeTxInfo = (rawTx: Buffer) => {
       to: rlpDecoded[4],
       chainId: rlpTx[0],
     };
-  } else {
-    // Legacy tx
+  } else if (txType === 123) {
+    // CIP64
     decodedTx = {
-      data: rlpDecoded[5],
-      to: rlpDecoded[3],
+      data: rlpDecoded[7],
+      to: rlpDecoded[5],
+      chainId: rlpTx[0],
+      feeCurrency: rlpDecoded[9],
+    };
+  } else {
+    // Celo-Legacy tx
+    decodedTx = {
+      data: rlpDecoded[8],
+      to: rlpDecoded[6],
       // Default to 1 for non EIP 155 txs
-      chainId: rlpTx.length > 6 ? rlpTx[6] : Buffer.from("0x01", "hex"),
+      chainId: rlpTx.length > 9 ? rlpTx[9] : Buffer.from("0x01", "hex"),
     };
   }
 
