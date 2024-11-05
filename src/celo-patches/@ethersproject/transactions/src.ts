@@ -10,8 +10,7 @@ import * as RLP from "@ethersproject/rlp";
 import { computePublicKey, recoverPublicKey } from "@ethersproject/signing-key";
 
 import { Logger } from "@ethersproject/logger";
-import { version } from "@ethersproject/transactions/lib.esm/_version";
-const logger = new Logger(version);
+const logger = new Logger("celo-patched/@ethersproject/transactions");
 
 ///////////////////////////////
 // Exported Types
