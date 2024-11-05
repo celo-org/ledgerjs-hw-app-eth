@@ -1,0 +1,26 @@
+diff --git a/src/Eth.ts b/src/Eth.ts
+index 42c1e7ae2b..d125a0e977 100644
+--- a/src/Eth.ts
++++ b/src/Eth.ts
+@@ -4,7 +4,7 @@ import { log } from "@ledgerhq/logs";
+ import { BigNumber } from "bignumber.js";
+ import type Transport from "@ledgerhq/hw-transport";
+ import { EIP712Message } from "@ledgerhq/types-live";
+-import { parse as parseTransaction } from "@ethersproject/transactions";
++import { parse as parseTransaction } from "./celo-patches/@ethersproject/transactions/src.js";
+ import { LedgerEthTransactionResolution, LoadConfig, ResolutionConfig } from "./services/types";
+ import { EthAppNftNotSupported, EthAppPleaseEnableContractData } from "./errors";
+ import { signEIP712HashedMessage, signEIP712Message } from "./modules/EIP712";
+diff --git a/src/modules/EIP712/utils.ts b/src/modules/EIP712/utils.ts
+index 0bbf8e2750..bbd238dd45 100644
+--- a/src/modules/EIP712/utils.ts
++++ b/src/modules/EIP712/utils.ts
+@@ -97,7 +97,7 @@ export const EIP712_TYPE_ENCODERS = {
+   },
+ 
+   BOOL(value: number | string | boolean | null): Buffer {
+-    return this.INT(typeof value === "boolean" ? Number(value).toString() : value);
++    return this.INT(typeof value === "boolean" ? Number(value).toString() : value as string);
+   },
+ 
+   ADDRESS(value: string | null): Buffer {

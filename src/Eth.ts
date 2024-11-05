@@ -4,7 +4,7 @@ import { log } from "@ledgerhq/logs";
 import { BigNumber } from "bignumber.js";
 import type Transport from "@ledgerhq/hw-transport";
 import { EIP712Message } from "@ledgerhq/types-live";
-import { parse as parseTransaction } from "@ethersproject/transactions";
+import { parse as parseTransaction } from "./celo-patches/@ethersproject/transactions/src.js";
 import { LedgerEthTransactionResolution, LoadConfig, ResolutionConfig } from "./services/types";
 import { EthAppNftNotSupported, EthAppPleaseEnableContractData } from "./errors";
 import { signEIP712HashedMessage, signEIP712Message } from "./modules/EIP712";

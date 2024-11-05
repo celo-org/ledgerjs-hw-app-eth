@@ -97,7 +97,7 @@ export const EIP712_TYPE_ENCODERS = {
   },
 
   BOOL(value: number | string | boolean | null): Buffer {
-    return this.INT(typeof value === "boolean" ? Number(value).toString() : value);
+    return this.INT(typeof value === "boolean" ? Number(value).toString() : value as string);
   },
 
   ADDRESS(value: string | null): Buffer {
