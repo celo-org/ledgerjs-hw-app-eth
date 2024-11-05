@@ -7,21 +7,24 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+/* eslint-disable @typescript-eslint/no-duplicate-enum-values */
+import semver from "semver";
 import { getFiltersForMessage, sortObjectAlphabetically, } from "@ledgerhq/evm-tools/message/EIP712/index";
+import { byContractAddressAndChainId, findERC20SignaturesInfo } from "../../services/ledger/erc20";
 import { hexBuffer, intAsHexBytes, splitPath } from "../../utils";
 import { getLoadConfig } from "../../services/ledger/loadConfig";
-import { destructTypeFromString, EIP712_TYPE_ENCODERS, EIP712_TYPE_PROPERTIES, makeTypeEntryStructBuffer, } from "./utils";
+import { destructTypeFromString, EIP712_TYPE_ENCODERS, EIP712_TYPE_PROPERTIES, getAppAndVersion, getCoinRefTokensMap, getFilterDisplayNameAndSigBuffers, getPayloadForFilterV2, makeTypeEntryStructBuffer, } from "./utils";
 /**
  * @ignore for the README
  *
  * Factory to create the recursive function that will pass on each
- * field level and APDUs to describe its structure implementation
+ * field level and APDUs to describe its struct implementation
  *
  * @param {Eth["sendStructImplem"]} sendStructImplem
  * @param {EIP712MessageTypes} types
  * @returns {void}
  */
-const makeRecursiveFieldStructImplem = (transport, types, filters) => {
+const makeRecursiveFieldStructImplem = ({ transport, loadConfig, chainId, erc20SignaturesBlob, types, filters, shouldUseV1Filters, shouldUseDiscardedFields, coinRefsTokensMap, }) => {
     var _a;
     const typesMap = {};
     for (const type in types) {
@@ -39,8 +42,32 @@ const makeRecursiveFieldStructImplem = (transport, types, filters) => {
                 structType: "array",
                 value: data.length,
             });
+            const entryPath = `${path}.[]`;
+            if (!data.length) {
+                // If the array is empty and a filter exists, we need to let the app know that the filter can be discarded
+                const entryFilters = filters === null || filters === void 0 ? void 0 : filters.fields.filter(f => f.path.startsWith(entryPath));
+                if (entryFilters && shouldUseDiscardedFields) {
+                    for (const entryFilter of entryFilters) {
+                        yield sendFilteringInfo(transport, "discardField", loadConfig, {
+                            path: entryFilter.path,
+                        });
+                        yield sendFilteringInfo(transport, "showField", loadConfig, {
+                            displayName: entryFilter.label,
+                            sig: entryFilter.signature,
+                            format: entryFilter.format,
+                            coinRef: entryFilter.coin_ref,
+                            chainId,
+                            erc20SignaturesBlob,
+                            shouldUseV1Filters,
+                            coinRefsTokensMap,
+                            isDiscarded: true,
+                        });
+                    }
+                }
+            }
+            // If the array is not empty, we need to send the struct implementation for each entry
             for (const entry of data) {
-                yield recursiveFieldStructImplem([typeDescription, restSizes], entry, `${path}.[]`);
+                yield recursiveFieldStructImplem([typeDescription, restSizes], entry, entryPath);
             }
         }
         else if (isCustomType) {
@@ -54,9 +81,16 @@ const makeRecursiveFieldStructImplem = (transport, types, filters) => {
         else {
             const filter = filters === null || filters === void 0 ? void 0 : filters.fields.find(f => path === f.path);
             if (filter) {
-                yield sendFilteringInfo(transport, "showField", {
+                yield sendFilteringInfo(transport, "showField", loadConfig, {
                     displayName: filter.label,
                     sig: filter.signature,
+                    format: filter.format,
+                    coinRef: filter.coin_ref,
+                    chainId,
+                    erc20SignaturesBlob,
+                    shouldUseV1Filters,
+                    coinRefsTokensMap,
+                    isDiscarded: false,
                 });
             }
             yield sendStructImplem(transport, {
@@ -64,7 +98,7 @@ const makeRecursiveFieldStructImplem = (transport, types, filters) => {
                 value: {
                     data,
                     type: (typeDescription === null || typeDescription === void 0 ? void 0 : typeDescription.name) || "",
-                    sizeInBits: typeDescription === null || typeDescription === void 0 ? void 0 : typeDescription.bits,
+                    sizeInBits: typeDescription === null || typeDescription === void 0 ? void 0 : typeDescription.size,
                 },
             });
         }
@@ -150,7 +184,7 @@ const sendStructImplem = (transport, structImplem) => __awaiter(void 0, void 0, 
             ]);
             const bufferSlices = new Array(Math.ceil(data.length / 256))
                 .fill(null)
-                .map((_, i) => data.slice(i * 255, (i + 1) * 255));
+                .map((_, i) => data.subarray(i * 255, (i + 1) * 255));
             for (const bufferSlice of bufferSlices) {
                 yield transport.send(APDU_FIELDS.CLA, APDU_FIELDS.INS, bufferSlice !== bufferSlices[bufferSlices.length - 1]
                     ? APDU_FIELDS.P1_partial
@@ -160,49 +194,89 @@ const sendStructImplem = (transport, structImplem) => __awaiter(void 0, void 0, 
     }
     return Promise.resolve();
 });
-function sendFilteringInfo(transport, type, data) {
+function sendFilteringInfo(transport, type, loadConfig, data) {
     return __awaiter(this, void 0, void 0, function* () {
         let APDU_FIELDS;
         (function (APDU_FIELDS) {
             APDU_FIELDS[APDU_FIELDS["CLA"] = 224] = "CLA";
             APDU_FIELDS[APDU_FIELDS["INS"] = 30] = "INS";
-            APDU_FIELDS[APDU_FIELDS["P1"] = 0] = "P1";
+            APDU_FIELDS[APDU_FIELDS["P1_standard"] = 0] = "P1_standard";
+            APDU_FIELDS[APDU_FIELDS["P1_discarded"] = 1] = "P1_discarded";
             APDU_FIELDS[APDU_FIELDS["P2_activate"] = 0] = "P2_activate";
-            APDU_FIELDS[APDU_FIELDS["P2_contract_name"] = 15] = "P2_contract_name";
+            APDU_FIELDS[APDU_FIELDS["P2_discarded"] = 1] = "P2_discarded";
             APDU_FIELDS[APDU_FIELDS["P2_show_field"] = 255] = "P2_show_field";
+            APDU_FIELDS[APDU_FIELDS["P2_message_info"] = 15] = "P2_message_info";
+            APDU_FIELDS[APDU_FIELDS["P2_datetime"] = 252] = "P2_datetime";
+            APDU_FIELDS[APDU_FIELDS["P2_amount_join_token"] = 253] = "P2_amount_join_token";
+            APDU_FIELDS[APDU_FIELDS["P2_amount_join_value"] = 254] = "P2_amount_join_value";
+            APDU_FIELDS[APDU_FIELDS["P2_raw"] = 255] = "P2_raw";
         })(APDU_FIELDS || (APDU_FIELDS = {}));
         switch (type) {
             case "activate":
-                return transport.send(APDU_FIELDS.CLA, APDU_FIELDS.INS, APDU_FIELDS.P1, APDU_FIELDS.P2_activate);
+                return transport.send(APDU_FIELDS.CLA, APDU_FIELDS.INS, APDU_FIELDS.P1_discarded, APDU_FIELDS.P2_activate);
             case "contractName": {
                 const { displayName, filtersCount, sig } = data;
-                const displayNameLengthBuffer = Buffer.from(intAsHexBytes(displayName.length, 1), "hex");
-                const displayNameBuffer = Buffer.from(displayName);
+                const { displayNameBuffer, sigBuffer } = getFilterDisplayNameAndSigBuffers(displayName, sig);
                 const filtersCountBuffer = Buffer.from(intAsHexBytes(filtersCount, 1), "hex");
-                const sigLengthBuffer = Buffer.from(intAsHexBytes(sig.length / 2, 1), "hex");
-                const sigBuffer = Buffer.from(sig, "hex");
-                const callData = Buffer.concat([
-                    displayNameLengthBuffer,
-                    displayNameBuffer,
-                    filtersCountBuffer,
-                    sigLengthBuffer,
-                    sigBuffer,
-                ]);
-                return transport.send(APDU_FIELDS.CLA, APDU_FIELDS.INS, APDU_FIELDS.P1, APDU_FIELDS.P2_contract_name, callData);
+                const payload = Buffer.concat([displayNameBuffer, filtersCountBuffer, sigBuffer]);
+                return transport.send(APDU_FIELDS.CLA, APDU_FIELDS.INS, APDU_FIELDS.P1_standard, APDU_FIELDS.P2_message_info, payload);
             }
             case "showField": {
-                const { displayName, sig } = data;
-                const displayNameLengthBuffer = Buffer.from(intAsHexBytes(displayName.length, 1), "hex");
-                const displayNameBuffer = Buffer.from(displayName);
-                const sigLengthBuffer = Buffer.from(intAsHexBytes(sig.length / 2, 1), "hex");
-                const sigBuffer = Buffer.from(sig, "hex");
-                const callData = Buffer.concat([
-                    displayNameLengthBuffer,
-                    displayNameBuffer,
-                    sigLengthBuffer,
-                    sigBuffer,
-                ]);
-                return transport.send(APDU_FIELDS.CLA, APDU_FIELDS.INS, APDU_FIELDS.P1, APDU_FIELDS.P2_show_field, callData);
+                const { displayName, sig, format, coinRef, chainId, coinRefsTokensMap, shouldUseV1Filters, erc20SignaturesBlob, isDiscarded, } = data;
+                const { displayNameBuffer, sigBuffer } = getFilterDisplayNameAndSigBuffers(displayName, sig);
+                if (shouldUseV1Filters) {
+                    const payload = Buffer.concat([displayNameBuffer, sigBuffer]);
+                    return transport.send(APDU_FIELDS.CLA, APDU_FIELDS.INS, APDU_FIELDS.P1_standard, APDU_FIELDS.P2_show_field, payload);
+                }
+                const isTokenAddress = format === "token";
+                if (isTokenAddress && coinRef !== undefined) {
+                    const { token, deviceTokenIndex } = coinRefsTokensMap[coinRef];
+                    if (deviceTokenIndex === undefined) {
+                        const payload = yield byContractAddressAndChainId(token, chainId, erc20SignaturesBlob);
+                        if (payload) {
+                            let PROVIDE_TOKEN_INFOS_APDU_FIELDS;
+                            (function (PROVIDE_TOKEN_INFOS_APDU_FIELDS) {
+                                PROVIDE_TOKEN_INFOS_APDU_FIELDS[PROVIDE_TOKEN_INFOS_APDU_FIELDS["CLA"] = 224] = "CLA";
+                                PROVIDE_TOKEN_INFOS_APDU_FIELDS[PROVIDE_TOKEN_INFOS_APDU_FIELDS["INS"] = 10] = "INS";
+                                PROVIDE_TOKEN_INFOS_APDU_FIELDS[PROVIDE_TOKEN_INFOS_APDU_FIELDS["P1"] = 0] = "P1";
+                                PROVIDE_TOKEN_INFOS_APDU_FIELDS[PROVIDE_TOKEN_INFOS_APDU_FIELDS["P2"] = 0] = "P2";
+                            })(PROVIDE_TOKEN_INFOS_APDU_FIELDS || (PROVIDE_TOKEN_INFOS_APDU_FIELDS = {}));
+                            const response = yield transport.send(PROVIDE_TOKEN_INFOS_APDU_FIELDS.CLA, PROVIDE_TOKEN_INFOS_APDU_FIELDS.INS, PROVIDE_TOKEN_INFOS_APDU_FIELDS.P1, PROVIDE_TOKEN_INFOS_APDU_FIELDS.P2, payload.data);
+                            coinRefsTokensMap[coinRef].deviceTokenIndex = response[0];
+                        }
+                    }
+                }
+                // For some messages like a Permit has no token address in its message, only the amount is provided.
+                // In those cases, we'll need to provide the verifying contract contained in the EIP712 domain
+                // The verifying contract is refrerenced by the coinRef 255 (0xff) in CAL and in the device
+                // independently of the token index returned by the app after a providerERC20TokenInfo
+                const shouldUseVerifyingContract = format === "amount" && coinRef === 255;
+                if (shouldUseVerifyingContract) {
+                    const { token } = coinRefsTokensMap[255];
+                    const payload = yield byContractAddressAndChainId(token, chainId, erc20SignaturesBlob);
+                    if (payload) {
+                        yield transport.send(0xe0, 0x0a, 0x00, 0x00, payload.data);
+                        coinRefsTokensMap[255].deviceTokenIndex = 255;
+                    }
+                }
+                if (!format) {
+                    throw new Error("Missing format");
+                }
+                const P2FormatMap = {
+                    raw: APDU_FIELDS.P2_raw,
+                    datetime: APDU_FIELDS.P2_datetime,
+                    token: APDU_FIELDS.P2_amount_join_token,
+                    amount: APDU_FIELDS.P2_amount_join_value,
+                };
+                const payload = getPayloadForFilterV2(format, coinRef, coinRefsTokensMap, displayNameBuffer, sigBuffer);
+                return transport.send(APDU_FIELDS.CLA, APDU_FIELDS.INS, isDiscarded ? APDU_FIELDS.P1_discarded : APDU_FIELDS.P1_standard, P2FormatMap[format], payload);
+            }
+            case "discardField": {
+                const { path } = data;
+                const pathBuffer = Buffer.from(path);
+                const pathLengthBuffer = Buffer.from(intAsHexBytes(pathBuffer.length, 1), "hex");
+                const payload = Buffer.concat([pathLengthBuffer, pathBuffer]);
+                return transport.send(APDU_FIELDS.CLA, APDU_FIELDS.INS, APDU_FIELDS.P1_standard, APDU_FIELDS.P2_discarded, payload);
             }
         }
     });
@@ -236,11 +310,11 @@ function sendFilteringInfo(transport, type, data) {
   })
  *
  * @param {String} path derivationPath
- * @param {Object} jsonMessage message to sign
+ * @param {Object} typedMessage message to sign
  * @param {Boolean} fullImplem use the legacy implementation
  * @returns {Promise}
  */
-export const signEIP712Message = (transport_1, path_1, jsonMessage_1, ...args_1) => __awaiter(void 0, [transport_1, path_1, jsonMessage_1, ...args_1], void 0, function* (transport, path, jsonMessage, fullImplem = false, loadConfig) {
+export const signEIP712Message = (transport_1, path_1, typedMessage_1, ...args_1) => __awaiter(void 0, [transport_1, path_1, typedMessage_1, ...args_1], void 0, function* (transport, path, typedMessage, fullImplem = false, loadConfig) {
     let APDU_FIELDS;
     (function (APDU_FIELDS) {
         APDU_FIELDS[APDU_FIELDS["CLA"] = 224] = "CLA";
@@ -249,13 +323,17 @@ export const signEIP712Message = (transport_1, path_1, jsonMessage_1, ...args_1)
         APDU_FIELDS[APDU_FIELDS["P2_v0"] = 0] = "P2_v0";
         APDU_FIELDS[APDU_FIELDS["P2_full"] = 1] = "P2_full";
     })(APDU_FIELDS || (APDU_FIELDS = {}));
-    const { primaryType, types: unsortedTypes, domain, message } = jsonMessage;
-    const { cryptoassetsBaseURL } = getLoadConfig(loadConfig);
+    const { primaryType, types: unsortedTypes, domain, message } = typedMessage;
+    const { calServiceURL } = getLoadConfig(loadConfig);
     // Types are sorted by alphabetical order in order to get the same schema hash no matter the JSON format
     const types = sortObjectAlphabetically(unsortedTypes);
-    const filters = yield getFiltersForMessage(jsonMessage, cryptoassetsBaseURL);
+    const { version } = yield getAppAndVersion(transport);
+    const shouldUseV1Filters = !semver.gte(version, "1.11.1-0", { includePrerelease: true });
+    const shouldUseDiscardedFields = semver.gte(version, "1.12.0-0", { includePrerelease: true });
+    const filters = yield getFiltersForMessage(typedMessage, shouldUseV1Filters, calServiceURL);
+    const coinRefsTokensMap = getCoinRefTokensMap(filters, shouldUseV1Filters, typedMessage);
     const typeEntries = Object.entries(types);
-    // Looping on all types entries and fields to send structures' definitions
+    // Looping on all types entries and fields to send structs' definitions
     for (const [typeName, entries] of typeEntries) {
         yield sendStructDef(transport, {
             structType: "name",
@@ -270,13 +348,26 @@ export const signEIP712Message = (transport_1, path_1, jsonMessage_1, ...args_1)
         }
     }
     if (filters) {
-        yield sendFilteringInfo(transport, "activate");
+        yield sendFilteringInfo(transport, "activate", loadConfig);
     }
+    const erc20SignaturesBlob = !shouldUseV1Filters
+        ? yield findERC20SignaturesInfo(loadConfig, domain.chainId || 0)
+        : undefined;
     // Create the recursion that should pass on each entry
     // of the domain fields and primaryType fields
-    const recursiveFieldStructImplem = makeRecursiveFieldStructImplem(transport, types, filters);
+    const recursiveFieldStructImplem = makeRecursiveFieldStructImplem({
+        transport,
+        loadConfig,
+        chainId: domain.chainId || 0,
+        erc20SignaturesBlob,
+        types,
+        filters,
+        shouldUseV1Filters,
+        shouldUseDiscardedFields,
+        coinRefsTokensMap,
+    });
     // Looping on all domain type's entries and fields to send
-    // structures' implementations
+    // structs' implementations
     const domainName = "EIP712Domain";
     yield sendStructImplem(transport, {
         structType: "root",
@@ -294,10 +385,10 @@ export const signEIP712Message = (transport_1, path_1, jsonMessage_1, ...args_1)
             filtersCount: fields.length,
             sig: contractName.signature,
         };
-        yield sendFilteringInfo(transport, "contractName", contractNameInfos);
+        yield sendFilteringInfo(transport, "contractName", loadConfig, contractNameInfos);
     }
     // Looping on all primaryType type's entries and fields to send
-    // structures' implementations
+    // struct' implementations
     yield sendStructImplem(transport, {
         structType: "root",
         value: primaryType,
@@ -318,8 +409,8 @@ export const signEIP712Message = (transport_1, path_1, jsonMessage_1, ...args_1)
         .send(APDU_FIELDS.CLA, APDU_FIELDS.INS, APDU_FIELDS.P1, fullImplem ? APDU_FIELDS.P2_v0 : APDU_FIELDS.P2_full, signatureBuffer)
         .then(response => {
         const v = response[0];
-        const r = response.slice(1, 1 + 32).toString("hex");
-        const s = response.slice(1 + 32, 1 + 32 + 32).toString("hex");
+        const r = response.subarray(1, 1 + 32).toString("hex");
+        const s = response.subarray(1 + 32, 1 + 32 + 32).toString("hex");
         return {
             v,
             r,
@@ -356,8 +447,8 @@ export const signEIP712HashedMessage = (transport, path, domainSeparatorHex, has
     hashStruct.copy(buffer, offset);
     return transport.send(0xe0, 0x0c, 0x00, 0x00, buffer).then(response => {
         const v = response[0];
-        const r = response.slice(1, 1 + 32).toString("hex");
-        const s = response.slice(1 + 32, 1 + 32 + 32).toString("hex");
+        const r = response.subarray(1, 1 + 32).toString("hex");
+        const s = response.subarray(1 + 32, 1 + 32 + 32).toString("hex");
         return {
             v,
             r,

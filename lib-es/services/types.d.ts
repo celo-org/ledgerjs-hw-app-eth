@@ -15,6 +15,7 @@ export type LoadConfig = {
     pluginBaseURL?: string | null;
     extraPlugins?: any | null;
     cryptoassetsBaseURL?: string | null;
+    calServiceURL?: string | null;
 };
 /**
  * Allows to configure precisely what the service need to resolve.
@@ -25,6 +26,7 @@ export type ResolutionConfig = {
     externalPlugins?: boolean;
     erc20?: boolean;
     domains?: DomainDescriptor[];
+    uniswapV3?: boolean;
 };
 export type LedgerEthTransactionService = {
     resolveTransaction: (rawTxHex: string, loadConfig: LoadConfig, resolutionConfig: ResolutionConfig) => Promise<LedgerEthTransactionResolution>;

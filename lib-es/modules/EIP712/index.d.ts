@@ -30,11 +30,11 @@ import { LoadConfig } from "../../services/types";
   })
  *
  * @param {String} path derivationPath
- * @param {Object} jsonMessage message to sign
+ * @param {Object} typedMessage message to sign
  * @param {Boolean} fullImplem use the legacy implementation
  * @returns {Promise}
  */
-export declare const signEIP712Message: (transport: Transport, path: string, jsonMessage: EIP712Message, fullImplem: boolean | undefined, loadConfig: LoadConfig) => Promise<{
+export declare const signEIP712Message: (transport: Transport, path: string, typedMessage: EIP712Message, fullImplem: boolean | undefined, loadConfig: LoadConfig) => Promise<{
     v: number;
     s: string;
     r: string;

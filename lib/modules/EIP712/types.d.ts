@@ -19,21 +19,23 @@ export type StructDefData = Required<{
     structType: "field";
     value: Buffer;
 }>;
-export type MessageFilters = {
-    contractName: {
-        label: string;
-        signature: string;
-    };
-    fields: {
-        label: string;
-        path: string;
-        signature: string;
-    }[];
-};
 export type FilteringInfoShowField = {
     displayName: string;
     sig: string;
     filtersCount?: never;
+    chainId: number;
+    erc20SignaturesBlob: string | null | undefined;
+    format: "raw" | "token" | "amount" | "datetime" | undefined;
+    coinRef: number | undefined;
+    shouldUseV1Filters: boolean | undefined;
+    coinRefsTokensMap: Record<number, {
+        token: string;
+        deviceTokenIndex?: number;
+    }>;
+    isDiscarded: boolean;
+};
+export type FilteringInfoDiscardField = {
+    path: string;
 };
 export type FilteringInfoContractName = {
     displayName: string;
