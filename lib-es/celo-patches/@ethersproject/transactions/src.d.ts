@@ -42,6 +42,8 @@ export interface Transaction {
     accessList?: AccessList;
     maxPriorityFeePerGas?: BigNumber;
     maxFeePerGas?: BigNumber;
+    gatewayFeeRecipient?: string;
+    gatewayFee?: BigNumber;
     feeCurrency?: string;
 }
 export declare function computeAddress(key: BytesLike | string): string;

@@ -35,6 +35,9 @@ const transactionFields = [
     { name: "nonce", maxLength: 32, numeric: true },
     { name: "gasPrice", maxLength: 32, numeric: true },
     { name: "gasLimit", maxLength: 32, numeric: true },
+    { name: "feeCurrency", length: 20 },
+    { name: "gatewayFeeRecipient", length: 20 },
+    { name: "gatewayFee", maxLength: 32, numeric: true },
     { name: "to", length: 20 },
     { name: "value", maxLength: 32, numeric: true },
     { name: "data" },
@@ -372,31 +375,34 @@ function _parseEip2930(payload) {
 // Legacy Transactions and EIP-155
 function _parse(rawTransaction) {
     const transaction = RLP.decode(rawTransaction);
-    if (transaction.length !== 9 && transaction.length !== 6) {
+    if (transaction.length !== 12 || transaction.length !== 9) {
         logger.throwArgumentError("invalid raw transaction", "rawTransaction", rawTransaction);
     }
     const tx = {
         nonce: handleNumber(transaction[0]).toNumber(),
         gasPrice: handleNumber(transaction[1]),
         gasLimit: handleNumber(transaction[2]),
-        to: handleAddress(transaction[3]),
-        value: handleNumber(transaction[4]),
-        data: transaction[5],
+        feeCurrency: handleAddress(transaction[3]),
+        gatewayFeeRecipient: handleAddress(transaction[4]),
+        gatewayFee: handleNumber(transaction[5]),
+        to: handleAddress(transaction[6]),
+        value: handleNumber(transaction[7]),
+        data: transaction[8],
         chainId: 0
     };
     // Legacy unsigned transaction
-    if (transaction.length === 6) {
+    if (transaction.length === 9) {
         return tx;
     }
     try {
-        tx.v = BigNumber.from(transaction[6]).toNumber();
+        tx.v = BigNumber.from(transaction[9]).toNumber();
     }
     catch (error) {
         // @TODO: What makes snese to do? The v is too big
         return tx;
     }
-    tx.r = hexZeroPad(transaction[7], 32);
-    tx.s = hexZeroPad(transaction[8], 32);
+    tx.r = hexZeroPad(transaction[10], 32);
+    tx.s = hexZeroPad(transaction[11], 32);
     if (BigNumber.from(tx.r).isZero() && BigNumber.from(tx.s).isZero()) {
         // EIP-155 unsigned transaction
         tx.chainId = tx.v;
@@ -428,7 +434,7 @@ function _parse(rawTransaction) {
 }
 export function parse(rawTransaction) {
     const payload = arrayify(rawTransaction);
-    // Legacy and EIP-155 Transactions
+    // Celo-Legacy and EIP-155 Transactions
     if (payload[0] > 0x7f) {
         return _parse(payload);
     }
