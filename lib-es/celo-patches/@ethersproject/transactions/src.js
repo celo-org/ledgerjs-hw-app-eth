@@ -375,7 +375,7 @@ function _parseEip2930(payload) {
 // Legacy Transactions and EIP-155
 function _parse(rawTransaction) {
     const transaction = RLP.decode(rawTransaction);
-    if (transaction.length !== 12 || transaction.length !== 9) {
+    if (transaction.length !== 12 && transaction.length !== 9) {
         logger.throwArgumentError("invalid raw transaction", "rawTransaction", rawTransaction);
     }
     const tx = {

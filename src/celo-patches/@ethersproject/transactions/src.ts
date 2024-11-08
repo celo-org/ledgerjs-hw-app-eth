@@ -498,7 +498,7 @@ function _parseEip2930(payload: Uint8Array): Transaction {
 function _parse(rawTransaction: Uint8Array): Transaction {
     const transaction = RLP.decode(rawTransaction);
 
-    if (transaction.length !== 12 || transaction.length !== 9) {
+    if (transaction.length !== 12 && transaction.length !== 9) {
         logger.throwArgumentError("invalid raw transaction", "rawTransaction", rawTransaction);
     }
 
