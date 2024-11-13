@@ -1,6 +1,6 @@
 {
   "name": "@celo/hw-app-eth",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "Ledger Hardware Wallet Ethereum Application API",
   "keywords": [
     "Ledger",
