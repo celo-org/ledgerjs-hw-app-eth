@@ -1,2 +1,4 @@
 node_modules
 .yarn/install-state.gz
+lib
+lib-es

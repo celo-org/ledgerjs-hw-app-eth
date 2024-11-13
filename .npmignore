@@ -2,6 +2,11 @@ node_modules
 submodules
 tests
 src
+.github
+.gitmodules
+.changeset
+.yarn
+.yarnrc.yml
 
 # exclude ts files and sourcemaps
 **/*.tsbuildinfo
