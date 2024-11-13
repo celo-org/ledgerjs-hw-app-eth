@@ -1,5 +1,11 @@
 # @ledgerhq/hw-app-eth
 
+## 1.0.0
+
+### Major Changes
+
+- [`f226262`](https://github.com/celo-org/ledgerjs-hw-app-eth/commit/f22626247fad741e705f4d3242d9fef3943a0977) Thanks [@nicolasbrugneaux](https://github.com/nicolasbrugneaux)! - Initial release
+
 ## 6.37.1
 
 ### Patch Changes
