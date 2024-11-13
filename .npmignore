@@ -1,0 +1,12 @@
+node_modules
+submodules
+tests
+src
+
+# exclude ts files and sourcemaps
+**/*.tsbuildinfo
+*.map
+*.ts
+
+# include the .d.ts files
+!lib/**/*.d.ts

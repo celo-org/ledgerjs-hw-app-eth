@@ -412,6 +412,39 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@celo/hw-app-eth@workspace:.":
+  version: 0.0.0-use.local
+  resolution: "@celo/hw-app-eth@workspace:."
+  dependencies:
+    "@ethersproject/abi": "npm:^5.5.0"
+    "@ethersproject/bignumber": "npm:^5.7.0"
+    "@ethersproject/constants": "npm:^5.7.0"
+    "@ethersproject/rlp": "npm:^5.5.0"
+    "@ethersproject/units": "npm:^5.7.0"
+    "@ledgerhq/cryptoassets-evm-signatures": "npm:^13.5.1"
+    "@ledgerhq/domain-service": "npm:^1.2.10"
+    "@ledgerhq/errors": "npm:^6.19.1"
+    "@ledgerhq/evm-tools": "npm:^1.2.4"
+    "@ledgerhq/hw-transport": "npm:^6.31.4"
+    "@ledgerhq/hw-transport-mocker": "npm:^6.29.4"
+    "@ledgerhq/logs": "npm:^6.12.0"
+    "@ledgerhq/types-live": "npm:^6.52.4"
+    "@types/jest": "npm:^29.5.10"
+    "@types/node": "npm:^20.8.10"
+    axios: "npm:1.7.7"
+    bignumber.js: "npm:^9.1.2"
+    documentation: "npm:14.0.2"
+    jest: "npm:^29.7.0"
+    nock: "npm:^13.0.5"
+    rimraf: "npm:^4.4.1"
+    semver: "npm:^7.3.5"
+    source-map-support: "npm:^0.5.21"
+    ts-jest: "npm:^29.1.1"
+    ts-node: "npm:^10.4.0"
+    typescript: "npm:^5.5.3"
+  languageName: unknown
+  linkType: soft
+
 "@cspotcode/source-map-support@npm:^0.8.0":
   version: 0.8.1
   resolution: "@cspotcode/source-map-support@npm:0.8.1"
@@ -1195,39 +1228,6 @@ __metadata:
   checksum: 10c0/46309aaa13e3e72c99ddfd40a0bdae765493cb8ced61aea13897cd3ee67dd90e2066375d8e63cd3daa2878e7892bf2ddf8a692a0fc266f5b1442aafad883e189
   languageName: node
   linkType: hard
-
-"@ledgerhq/hw-app-eth@workspace:.":
-  version: 0.0.0-use.local
-  resolution: "@ledgerhq/hw-app-eth@workspace:."
-  dependencies:
-    "@ethersproject/abi": "npm:^5.5.0"
-    "@ethersproject/bignumber": "npm:^5.7.0"
-    "@ethersproject/constants": "npm:^5.7.0"
-    "@ethersproject/rlp": "npm:^5.5.0"
-    "@ethersproject/units": "npm:^5.7.0"
-    "@ledgerhq/cryptoassets-evm-signatures": "npm:^13.5.1"
-    "@ledgerhq/domain-service": "npm:^1.2.10"
-    "@ledgerhq/errors": "npm:^6.19.1"
-    "@ledgerhq/evm-tools": "npm:^1.2.4"
-    "@ledgerhq/hw-transport": "npm:^6.31.4"
-    "@ledgerhq/hw-transport-mocker": "npm:^6.29.4"
-    "@ledgerhq/logs": "npm:^6.12.0"
-    "@ledgerhq/types-live": "npm:^6.52.4"
-    "@types/jest": "npm:^29.5.10"
-    "@types/node": "npm:^20.8.10"
-    axios: "npm:1.7.7"
-    bignumber.js: "npm:^9.1.2"
-    documentation: "npm:14.0.2"
-    jest: "npm:^29.7.0"
-    nock: "npm:^13.0.5"
-    rimraf: "npm:^4.4.1"
-    semver: "npm:^7.3.5"
-    source-map-support: "npm:^0.5.21"
-    ts-jest: "npm:^29.1.1"
-    ts-node: "npm:^10.4.0"
-    typescript: "npm:^5.5.3"
-  languageName: unknown
-  linkType: soft
 
 "@ledgerhq/hw-transport-mocker@npm:^6.29.4":
   version: 6.29.4
