@@ -21,7 +21,7 @@ jobs:
       repository-projects: write
     uses: celo-org/reusable-workflows/.github/workflows/npm-publish-oidc-changesets.yaml@v3.1.0-rc.6
     with:
-      node-version: 20
+      node-version: 18
       version-command: yarn changeset version
       publish-command: npm publish --access=public
     
